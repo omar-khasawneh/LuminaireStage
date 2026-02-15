@@ -1,0 +1,5 @@
+{
+  "name": "LuminaireStage Engineer Pro",
+  "description": "An advanced LED strip stage design and engineering platform. It calculates power delivery, fuse requirements, voltage drops, and generates complete documentation (BOM, wiring diagrams, and legal/safety plans) using AI-driven optimization.",
+  "requestFramePermissions": []
+}
