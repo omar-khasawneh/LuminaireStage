@@ -24,12 +24,21 @@ const AIDashboard: React.FC<Props> = ({ project, strips, psus }) => {
       switches: new Map<string, number>()
     };
 
-    project.zones.forEach(z => counts.strips.set(z.stripId, (counts.strips.get(z.stripId) || 0) + z.length));
+    // FIX: Zones don't have stripId directly; lookup via fixtureDefinitions
+    project.zones.forEach(z => {
+      const fix = project.fixtureDefinitions.find(f => f.id === z.fixtureDefinitionId);
+      if (fix) {
+        counts.strips.set(fix.stripId, (counts.strips.get(fix.stripId) || 0) + fix.length);
+      }
+    });
+
     project.subsystems.forEach(s => {
       counts.psus.set(s.psuId, (counts.psus.get(s.psuId) || 0) + 1);
       counts.controllers.set(s.controllerId, (counts.controllers.get(s.controllerId) || 0) + 1);
     });
-    project.ethernetSwitches.forEach(sw => counts.switches.set('sw1', (counts.switches.get('sw1') || 0) + 1));
+
+    // FIX: Properly check for optional ethernetSwitches and populate counts
+    project.ethernetSwitches?.forEach(sw => counts.switches.set(sw.id || 'sw1', (counts.switches.get(sw.id || 'sw1') || 0) + 1));
 
     let total = 0;
     const lines: { name: string, qty: string, cost: number }[] = [];
@@ -57,6 +66,16 @@ const AIDashboard: React.FC<Props> = ({ project, strips, psus }) => {
       if (con) {
         const c = con.price * qty;
         lines.push({ name: con.name, qty: `x${qty}`, cost: c });
+        total += c;
+      }
+    });
+
+    // FIX: Implemented missing switch BOM line calculation
+    counts.switches.forEach((qty, id) => {
+      const sw = DEFAULT_SWITCHES.find(x => x.id === id);
+      if (sw) {
+        const c = sw.price * qty;
+        lines.push({ name: sw.name, qty: `x${qty}`, cost: c });
         total += c;
       }
     });

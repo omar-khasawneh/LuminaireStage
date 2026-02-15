@@ -44,15 +44,17 @@ export interface Controller {
   maxPixelsPerPort: number;
   price: number;
   brand: string;
-  ipRating: string;
 }
 
+// Added missing EthernetSwitch interface
 export interface EthernetSwitch {
   id: string;
   name: string;
   ports: number;
-  isPoE: boolean;
+  poe: boolean;
   price: number;
+  brand: string;
+  ipRating: string;
 }
 
 export interface MountingStructure {
@@ -61,7 +63,6 @@ export interface MountingStructure {
   material: string;
   pricePerMeter: number;
   weightPerMeter: number;
-  ipRating: string;
 }
 
 export interface Cable {
@@ -70,7 +71,6 @@ export interface Cable {
   gauge: number; // AWG
   maxAmps: number;
   pricePerMeter: number;
-  ipRating: string;
 }
 
 export interface Fuse {
@@ -87,21 +87,20 @@ export interface FixtureDefinition {
   stripId: string;
   length: number;
   mountingId: string;
-  // Calculated or metadata
-  notes?: string;
+  shape: 'Line' | 'Rectangle' | 'Circle' | 'Triangle';
 }
 
 export interface Zone {
   id: string;
   name: string;
   fixtureDefinitionId: string;
-  wireGauge: number; 
-  wireLength: number;
-  x: number; 
-  y: number; 
-  rotation: number;
   subsystemId: string;
-  fuseId?: string;
+  wireLength: number; // Set in Step 3
+  wireGauge: number;  // Adjusted in Step 4
+  fuseId: string;     // Selected in Step 4
+  x: number;
+  y: number;
+  rotation: number;
 }
 
 export interface Subsystem {
@@ -116,10 +115,11 @@ export interface Subsystem {
 export interface Project {
   id: string;
   name: string;
-  venueType: 'Indoor' | 'Outdoor' | 'Club' | 'Arena';
   subsystems: Subsystem[];
   zones: Zone[];
-  ethernetSwitches: { id: string, name: string, x: number, y: number }[];
   fixtureDefinitions: FixtureDefinition[];
+  // Added missing ethernetSwitches property
+  ethernetSwitches: EthernetSwitch[];
+  venueType: 'Indoor' | 'Outdoor' | 'Club' | 'Arena';
   safetyFactor: number;
 }
