@@ -23,8 +23,6 @@ export interface LEDStrip {
   pricePerMeter: number;
   brand: string;
   ipRating: string;
-  maxRunLength: number; // in meters before power injection
-  cri?: number;
 }
 
 export interface PSU {
@@ -36,7 +34,6 @@ export interface PSU {
   price: number;
   brand: string;
   ipRating: string;
-  formFactor: 'Enclosed' | 'DIN-Rail' | 'Rainproof';
 }
 
 export interface Controller {
@@ -47,43 +44,6 @@ export interface Controller {
   maxPixelsPerPort: number;
   price: number;
   brand: string;
-  ipRating: string;
-}
-
-export interface Cable {
-  id: string;
-  name: string;
-  gauge: number; // AWG
-  cores: number;
-  pricePerMeter: number;
-  ipRating: string;
-  type: 'Power' | 'Data' | 'Hybrid';
-}
-
-export interface Fuse {
-  id: string;
-  name: string;
-  rating: number; // Amps
-  type: 'Fast' | 'Slow' | 'Automotive';
-  price: number;
-}
-
-export interface Mounting {
-  id: string;
-  name: string;
-  material: 'Aluminum' | 'Plastic' | 'Steel';
-  pricePerMeter: number;
-  heatDissipationFactor: number; // 0 to 1
-  ipRating: string;
-}
-
-export interface FixtureShape {
-  id: string;
-  name: string;
-  shapeType: 'Rectangle' | 'Triangle' | 'Circle' | 'Custom';
-  stripId: string;
-  totalLength: number;
-  mountingId: string;
 }
 
 export interface EthernetSwitch {
@@ -97,14 +57,14 @@ export interface EthernetSwitch {
 export interface Zone {
   id: string;
   name: string;
-  fixtureId: string; // References a custom fixture definition
+  stripId: string;
+  length: number; 
   wireGauge: number; 
   wireLength: number;
   x: number; 
   y: number; 
   rotation: number;
   subsystemId: string;
-  fuseId: string;
 }
 
 export interface Subsystem {
@@ -122,7 +82,6 @@ export interface Project {
   venueType: 'Indoor' | 'Outdoor' | 'Club' | 'Arena';
   subsystems: Subsystem[];
   zones: Zone[];
-  fixtures: FixtureShape[];
   ethernetSwitches: { id: string, name: string, x: number, y: number }[];
   safetyFactor: number;
 }

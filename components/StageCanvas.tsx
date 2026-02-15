@@ -1,17 +1,15 @@
 
-import React, { useState, useRef, useMemo } from 'react';
-import { Project, Zone, LEDStrip, PSU, Subsystem, Controller, EthernetSwitch, FixtureShape, Cable, Mounting } from '../types';
-import { Move, Zap, Network, Box, Cpu, MousePointer2, Trash2, DollarSign, Info } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Project, Zone, LEDStrip, PSU, Subsystem, Controller, EthernetSwitch } from '../types';
+import { Move, Zap, Network, Box, Cpu, MousePointer2, Trash2 } from 'lucide-react';
 
 interface Props {
   project: Project;
   setProject: React.Dispatch<React.SetStateAction<Project>>;
   strips: LEDStrip[];
-  cables: Cable[];
-  mountings: Mounting[];
 }
 
-const StageCanvas: React.FC<Props> = ({ project, setProject, strips, cables, mountings }) => {
+const StageCanvas: React.FC<Props> = ({ project, setProject, strips }) => {
   const [selectedElement, setSelectedElement] = useState<{ type: 'zone' | 'subsystem' | 'switch', id: string } | null>(null);
   const containerRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -23,112 +21,110 @@ const StageCanvas: React.FC<Props> = ({ project, setProject, strips, cables, mou
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !selectedElement || !containerRef.current) return;
+    
     const svg = containerRef.current;
     const pt = svg.createSVGPoint();
-    pt.x = e.clientX; pt.y = e.clientY;
+    pt.x = e.clientX;
+    pt.y = e.clientY;
     const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+
     setProject(prev => {
-      if (selectedElement.type === 'zone') return { ...prev, zones: prev.zones.map(z => z.id === selectedElement.id ? { ...z, x: svgP.x, y: svgP.y } : z) };
-      if (selectedElement.type === 'subsystem') return { ...prev, subsystems: prev.subsystems.map(s => s.id === selectedElement.id ? { ...s, x: svgP.x, y: svgP.y } : s) };
-      return { ...prev, ethernetSwitches: prev.ethernetSwitches.map(sw => sw.id === selectedElement.id ? { ...sw, x: svgP.x, y: svgP.y } : sw) };
+      if (selectedElement.type === 'zone') {
+        return { ...prev, zones: prev.zones.map(z => z.id === selectedElement.id ? { ...z, x: svgP.x, y: svgP.y } : z) };
+      } else if (selectedElement.type === 'subsystem') {
+        return { ...prev, subsystems: prev.subsystems.map(s => s.id === selectedElement.id ? { ...s, x: svgP.x, y: svgP.y } : s) };
+      } else {
+        return { ...prev, ethernetSwitches: prev.ethernetSwitches.map(sw => sw.id === selectedElement.id ? { ...sw, x: svgP.x, y: svgP.y } : sw) };
+      }
     });
   };
 
-  const selectedZoneData = useMemo(() => {
-    if (selectedElement?.type !== 'zone') return null;
-    const zone = project.zones.find(z => z.id === selectedElement.id);
-    if (!zone) return null;
-    const fixtureDef = project.fixtures.find(f => f.id === zone.fixtureId);
-    if (!fixtureDef) return null;
-    const strip = strips.find(s => s.id === fixtureDef.stripId);
-    const mounting = mountings.find(m => m.id === fixtureDef.mountingId);
-    const cable = cables.find(c => c.gauge === zone.wireGauge);
-
-    const stripCost = (strip?.pricePerMeter || 0) * fixtureDef.totalLength;
-    const mountCost = (mounting?.pricePerMeter || 0) * fixtureDef.totalLength;
-    const cableCost = (cable?.pricePerMeter || 0) * zone.wireLength;
-    
-    return { 
-      name: zone.name, 
-      fixtureName: fixtureDef.name, 
-      totalCost: stripCost + mountCost + cableCost,
-      breakdown: { strip: stripCost, mount: mountCost, cable: cableCost }
-    };
-  }, [selectedElement, project, strips, cables, mountings]);
+  const handleMouseUp = () => setIsDragging(false);
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 rounded-3xl border border-slate-700 overflow-hidden relative">
+    <div className="flex flex-col h-full bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden">
       <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h3 className="font-bold flex items-center gap-2 text-indigo-400"><Move size={18} /> Arena View</h3>
-          <span className="text-[10px] text-slate-500 bg-slate-950 px-2 py-1 rounded font-black uppercase tracking-widest">Physics-Correct Placement</span>
+          <h3 className="font-bold flex items-center gap-2 text-indigo-400">
+            <Move size={18} /> System Topology View
+          </h3>
+          <span className="text-xs text-slate-500 bg-slate-900 px-2 py-1 rounded">Visualizing Power & Data Logic Flow</span>
+        </div>
+        <div className="flex gap-2">
+           <button onClick={() => setSelectedElement(null)} className="p-2 hover:bg-slate-700 rounded text-slate-400 transition-colors"><MousePointer2 size={18}/></button>
         </div>
       </div>
 
-      <div className="relative flex-1 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:30px_30px]">
-        <svg ref={containerRef} className="w-full h-full cursor-crosshair touch-none" onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)} onMouseLeave={() => setIsDragging(false)} viewBox="0 0 1000 600">
-          {/* Top-down visual connections */}
-          {project.ethernetSwitches.map(sw => project.subsystems.map(sub => (
-            <line key={`sig-${sw.id}-${sub.id}`} x1={sw.x} y1={sw.y} x2={sub.x} y2={sub.y} className="stroke-cyan-500/10 stroke-1" strokeDasharray="4 4" />
-          )))}
+      <div className="relative flex-1 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:25px_25px]">
+        <svg 
+          ref={containerRef}
+          className="w-full h-full cursor-crosshair touch-none min-h-[500px]"
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          viewBox="0 0 1000 600"
+        >
+          {/* Signal Wiring (Switch to Controller) */}
+          {project.ethernetSwitches.map(sw => (
+            project.subsystems.map(sub => (
+              <line 
+                key={`sig-${sw.id}-${sub.id}`}
+                x1={sw.x} y1={sw.y} x2={sub.x} y2={sub.y}
+                className="stroke-cyan-500/20 stroke-1"
+                strokeDasharray="5 5"
+              />
+            ))
+          ))}
+
+          {/* Subsystem Wiring (Controller to Zones) */}
           {project.zones.map(zone => {
             const sub = project.subsystems.find(s => s.id === zone.subsystemId);
             if (!sub) return null;
-            return <line key={`pwr-${zone.id}`} x1={sub.x} y1={sub.y} x2={zone.x} y2={zone.y} className="stroke-amber-500/10 stroke-1" />;
+            return (
+              <line 
+                key={`pwr-${zone.id}`}
+                x1={sub.x} y1={sub.y} x2={zone.x} y2={zone.y}
+                className="stroke-amber-500/20 stroke-2"
+              />
+            );
           })}
 
-          {/* Render Elements */}
-          {project.subsystems.map(sub => (
-            <g key={sub.id} transform={`translate(${sub.x}, ${sub.y})`} onMouseDown={() => handleMouseDown('subsystem', sub.id)} className="cursor-move group">
-              <rect x="-30" y="-30" width="60" height="60" rx="8" className="fill-slate-800 stroke-indigo-500/50 stroke-1 shadow-2xl" />
-              <Cpu size={16} x="-8" y="-8" className="text-indigo-400" />
-              <text y="40" textAnchor="middle" className="text-[8px] fill-slate-500 font-bold uppercase">{sub.name}</text>
+          {/* Ethernet Switches */}
+          {project.ethernetSwitches.map(sw => (
+            <g key={sw.id} transform={`translate(${sw.x}, ${sw.y})`} onMouseDown={() => handleMouseDown('switch', sw.id)} className="cursor-move group">
+              <rect x="-25" y="-15" width="50" height="30" rx="4" className="fill-slate-800 stroke-cyan-500 stroke-2" />
+              <Network size={16} x="-8" y="-8" className="text-cyan-400" />
+              <text y="25" textAnchor="middle" className="text-[9px] fill-cyan-500 font-black uppercase tracking-tighter">{sw.name}</text>
             </g>
           ))}
 
+          {/* Subsystems (PSU + Controller Hub) */}
+          {project.subsystems.map(sub => (
+            <g key={sub.id} transform={`translate(${sub.x}, ${sub.y})`} onMouseDown={() => handleMouseDown('subsystem', sub.id)} className="cursor-move group">
+              <rect x="-35" y="-35" width="70" height="70" rx="8" className="fill-slate-800 stroke-indigo-500 stroke-2 shadow-xl" />
+              <circle cx="0" cy="0" r="28" className="fill-slate-900/50 stroke-indigo-500/20 stroke-1" />
+              <Cpu size={20} x="-10" y="-14" className="text-indigo-400" />
+              <Zap size={12} x="-6" y="8" className="text-amber-400" />
+              <text y="48" textAnchor="middle" className="text-[10px] fill-slate-300 font-bold uppercase tracking-widest">{sub.name}</text>
+            </g>
+          ))}
+
+          {/* Fixtures (LED Strips) */}
           {project.zones.map(zone => {
-            const fixtureDef = project.fixtures.find(f => f.id === zone.fixtureId);
+            const strip = strips.find(s => s.id === zone.stripId);
+            const power = (strip?.wattsPerMeter || 0) * zone.length;
+            const current = power / (strip?.voltage || 12);
+            
             return (
               <g key={zone.id} transform={`translate(${zone.x}, ${zone.y}) rotate(${zone.rotation || 0})`} onMouseDown={() => handleMouseDown('zone', zone.id)} className="cursor-move group">
-                <rect x="-20" y="-2" width="40" height="4" rx="1" className={`transition-all ${selectedElement?.id === zone.id ? 'fill-indigo-400 shadow-[0_0_15px_rgba(129,140,248,0.5)]' : 'fill-slate-600 group-hover:fill-slate-400'}`} />
-                <text y="-8" textAnchor="middle" className="text-[7px] fill-slate-500 font-bold uppercase">{zone.name}</text>
+                <rect x="-40" y="-4" width="80" height="8" rx="2" className="fill-slate-800 stroke-slate-600 hover:stroke-indigo-400 transition-colors" />
+                <rect x="-40" y="-1" width="80" height="2" className="fill-indigo-500/40 blur-[1px]" />
+                <text y="-8" textAnchor="middle" className="text-[8px] fill-slate-500 font-bold uppercase tracking-widest">{zone.name}</text>
+                <text y="16" textAnchor="middle" className="text-[7px] fill-amber-500/70 font-mono group-hover:fill-amber-400">{current.toFixed(1)}A | {power.toFixed(0)}W</text>
               </g>
             );
           })}
         </svg>
-
-        {/* Selected Element Tooltip */}
-        {selectedZoneData && (
-          <div className="absolute top-4 right-4 bg-slate-900/95 backdrop-blur-md p-6 rounded-3xl border border-indigo-500/30 shadow-2xl animate-in fade-in slide-in-from-top-4 w-64 pointer-events-none">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl"><Info size={16}/></div>
-              <div>
-                <h4 className="text-xs font-black text-white uppercase tracking-wider">{selectedZoneData.name}</h4>
-                <p className="text-[10px] text-slate-500">{selectedZoneData.fixtureName}</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-[10px]">
-                 <span className="text-slate-500">Strips</span>
-                 <span className="text-slate-300">${selectedZoneData.breakdown.strip.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                 <span className="text-slate-500">Mounting</span>
-                 <span className="text-slate-300">${selectedZoneData.breakdown.mount.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-[10px]">
-                 <span className="text-slate-500">Cabling</span>
-                 <span className="text-slate-300">${selectedZoneData.breakdown.cable.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-700 flex justify-between items-center">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Est. Cost</span>
-              <span className="text-xl font-black text-emerald-400">${selectedZoneData.totalCost.toFixed(2)}</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
