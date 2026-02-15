@@ -44,6 +44,7 @@ export interface Controller {
   maxPixelsPerPort: number;
   price: number;
   brand: string;
+  ipRating: string;
 }
 
 export interface EthernetSwitch {
@@ -54,17 +55,53 @@ export interface EthernetSwitch {
   price: number;
 }
 
-export interface Zone {
+export interface MountingStructure {
+  id: string;
+  name: string;
+  material: string;
+  pricePerMeter: number;
+  weightPerMeter: number;
+  ipRating: string;
+}
+
+export interface Cable {
+  id: string;
+  name: string;
+  gauge: number; // AWG
+  maxAmps: number;
+  pricePerMeter: number;
+  ipRating: string;
+}
+
+export interface Fuse {
+  id: string;
+  name: string;
+  rating: number; // Amps
+  type: string;
+  price: number;
+}
+
+export interface FixtureDefinition {
   id: string;
   name: string;
   stripId: string;
-  length: number; 
+  length: number;
+  mountingId: string;
+  // Calculated or metadata
+  notes?: string;
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+  fixtureDefinitionId: string;
   wireGauge: number; 
   wireLength: number;
   x: number; 
   y: number; 
   rotation: number;
   subsystemId: string;
+  fuseId?: string;
 }
 
 export interface Subsystem {
@@ -83,5 +120,6 @@ export interface Project {
   subsystems: Subsystem[];
   zones: Zone[];
   ethernetSwitches: { id: string, name: string, x: number, y: number }[];
+  fixtureDefinitions: FixtureDefinition[];
   safetyFactor: number;
 }
